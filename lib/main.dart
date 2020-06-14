@@ -8,6 +8,7 @@ import 'package:thecave/pages/detail.dart';
 import 'package:thecave/pages/keranjang.dart';
 import 'package:thecave/pages/login.dart';
 import 'package:thecave/pages/profile.dart';
+import 'package:thecave/pages/main-menu.dart';
 
 void main() => runApp(MyApp());
 
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         initialRoute: '/login',
         routes: {
           '/login': (context) => Login(),
+          '/main-menu': (context) => MainMenu(),
           '/dashboard': (context) => Dashboard(),
           '/profile': (context) => Profile(),
           '/cart': (context) => Keranjang(),
