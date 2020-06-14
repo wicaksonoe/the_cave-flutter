@@ -1,7 +1,14 @@
+import 'dart:convert';
+
+import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as logger;
+
+import 'package:thecave/env.dart';
+import 'package:thecave/pages/login.dart';
 
 class MainMenu extends StatelessWidget {
   @override
@@ -33,15 +40,15 @@ class MainMenu extends StatelessWidget {
               ),
               MenuButtonWidget(
                 innerText: "Toko",
-                action: () => pushToToko(context),
+                action: () => MenuButtonWidget().pushToToko(context),
               ),
               MenuButtonWidget(
                 innerText: "Bazar",
-                action: () => pushToBazar(context),
+                action: () => MenuButtonWidget().pushToBazar(context),
               ),
               MenuButtonWidget(
                 innerText: "Logout",
-                action: () => logout(context),
+                action: () => MenuButtonWidget().logout(context),
               ),
             ],
           ),
@@ -52,11 +59,7 @@ class MainMenu extends StatelessWidget {
 }
 
 class MenuButtonWidget extends StatelessWidget {
-  const MenuButtonWidget({
-    this.key,
-    this.action,
-    this.innerText,
-  });
+  const MenuButtonWidget({this.key, this.action, this.innerText});
 
   final Key key;
   final VoidCallback action;
@@ -85,23 +88,67 @@ class MenuButtonWidget extends StatelessWidget {
       ),
     );
   }
-}
 
-pushToToko(context) {
-  logger.log("Toko");
-}
+  pushToToko(context) {
+    Navigator.of(context).pushNamed('/dashboard-toko');
+  }
 
-pushToBazar(context) {
-  // logger.log("Bazar");
-  Navigator.pushNamed(context, '/dashboard');
-}
+  pushToBazar(context) async {
+    final Env _env = Env();
+    final prop = await SharedPreferences.getInstance();
+    final token = prop.getString('token') ?? '';
+    Response response;
 
-logout(context) async {
-  SharedPreferences prop = await SharedPreferences.getInstance();
-  await prop.clear();
-  Navigator.pushNamedAndRemoveUntil(
-    context,
-    '/login',
-    (route) => false,
-  );
+    response = await get('${_env.baseURL}/check', headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token'
+    }).timeout(Duration(seconds: 30));
+
+    Map<String, dynamic> data = await jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      switch (response.statusCode) {
+        case 401:
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+            arguments: ErrorMessage(
+                errorMessage: "Session expired.\nPlease re-login."),
+          );
+          break;
+
+        default:
+          logger.log(response.body);
+          break;
+      }
+
+      return;
+    }
+
+    if (data['data']['id_bazar'] == '') {
+      logger.log("Anda tidak terdaftar dalam bazar.");
+      Flushbar(
+        padding: EdgeInsets.fromLTRB(30, 25, 0, 25),
+        message: "Anda tidak terdaftar dalam bazar.",
+        duration: Duration(seconds: 3),
+      )..show(context);
+      return;
+    } else {
+      Navigator.pushNamed(context, '/dashboard');
+    }
+
+    // logger.log(token);
+    // Navigator.pushNamed(context, '/dashboard');
+  }
+
+  logout(context) async {
+    SharedPreferences prop = await SharedPreferences.getInstance();
+    await prop.clear();
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/login',
+      (route) => false,
+    );
+  }
 }
