@@ -8,6 +8,9 @@ import 'package:thecave/pages/detail.dart';
 import 'package:thecave/pages/keranjang.dart';
 import 'package:thecave/pages/login.dart';
 import 'package:thecave/pages/profile.dart';
+import 'package:thecave/pages/main-menu.dart';
+import 'package:thecave/pages/toko/checkout-toko.dart';
+import 'package:thecave/pages/toko/keranjang-toko.dart';
 
 void main() => runApp(MyApp());
 
@@ -40,6 +43,9 @@ class MyApp extends StatelessWidget {
         initialRoute: '/login',
         routes: {
           '/login': (context) => Login(),
+          '/main-menu': (context) => MainMenu(),
+          '/dashboard-toko': (context) => KeranjangToko(),
+          '/checkout-toko': (context) => CheckoutToko(),
           '/dashboard': (context) => Dashboard(),
           '/profile': (context) => Profile(),
           '/cart': (context) => Keranjang(),

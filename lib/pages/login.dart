@@ -158,7 +158,7 @@ class _LoginState extends State<Login> {
         final prop = await SharedPreferences.getInstance();
         prop.setString('token', data['access_token']);
 
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        Navigator.pushReplacementNamed(context, '/main-menu');
       } else if (response.statusCode == 401) {
         setState(() {
           _errorMsg = 'Kombinasi username dan password salah';
@@ -193,7 +193,7 @@ class _LoginState extends State<Login> {
 
       if (response.statusCode == 200) {
         prop.setString('id_bazar', data['id_bazar']);
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        Navigator.pushReplacementNamed(context, '/main-menu');
       } else {
         setState(() {
           _isLoading = false;
