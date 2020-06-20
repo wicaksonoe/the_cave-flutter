@@ -29,36 +29,39 @@ class _CheckoutTokoState extends State<CheckoutToko> {
     symbol: 'Rp. ',
     decimalDigits: 0,
   );
+
   bool _isLoading = false;
   var _daftarTransaksi = List<dynamic>();
   int _totalBayar = 0;
+  bool _runInit = true;
 
   @override
   Widget build(BuildContext context) {
-    final DaftarBarangToko _checkout =
-        ModalRoute.of(context).settings.arguments;
-    _totalBayar = 0;
-    _daftarTransaksi.clear();
+    if (_runInit) {
+      final DaftarBarangToko _checkout =
+          ModalRoute.of(context).settings.arguments;
+      _daftarTransaksi.clear();
 
-    for (var barang in _checkout.listBarang) {
-      int jumlahBeli = barang['jumlah'];
-      String convertHarga = barang['harga_jual']
-          .toString()
-          .replaceAll('Rp. ', '')
-          .split(',')
-          .join();
-      int hargaTotal = int.parse(convertHarga) * jumlahBeli;
+      for (var barang in _checkout.listBarang) {
+        int hargaJual = formatHarga(barang['harga_jual']);
+        int hargaGrosir = formatHarga(barang['harga_grosir']);
+        int hargaPartai = formatHarga(barang['harga_partai']);
 
-      _daftarTransaksi.add({
-        'barcode': barang['barcode'],
-        'nama': barang['nama'],
-        'jumlah': barang['jumlah'],
-        'harga': barang['harga_jual'],
-        'hargaTotal': _currencyFormater.format(hargaTotal),
-      });
+        _daftarTransaksi.add({
+          'barcode': barang['barcode'],
+          'nama': barang['nama'],
+          'jumlah': barang['jumlah'],
+          'harga_jual': hargaJual,
+          'harga_grosir': hargaGrosir,
+          'harga_partai': hargaPartai,
+          'isPartai': false,
+        });
+      }
 
-      _totalBayar += hargaTotal;
+      _runInit = false;
     }
+
+    _totalBayar = hitungKeranjang(_daftarTransaksi);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,11 +87,26 @@ class _CheckoutTokoState extends State<CheckoutToko> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
-                                  Text("Harga: ${item['harga']}"),
+                                  Text(hargaBarang(item)),
                                   Text("Jumlah Pembelian: ${item['jumlah']}"),
+                                  showPartaiButton(item)
+                                      ? CheckboxListTile(
+                                          title: Text("Harga partai"),
+                                          value: item['isPartai'],
+                                          controlAffinity:
+                                              ListTileControlAffinity.leading,
+                                          onChanged: (bool value) {
+                                            // log(value.toString());
+                                            setState(() {
+                                              item['isPartai'] = value;
+                                              // _totalBayar = hitungKeranjang(_daftarTransaksi);
+                                            });
+                                          },
+                                        )
+                                      : Container(),
                                 ],
                               ),
-                              trailing: Text(item['hargaTotal']),
+                              trailing: Text(subTotalBarang(item)),
                             ),
                           );
                         },
@@ -125,14 +143,21 @@ class _CheckoutTokoState extends State<CheckoutToko> {
                       ),
                       onPressed: () {
                         List<dynamic> barcode = List<dynamic>();
-                        List<dynamic> jumlah = List<dynamic>(); 
- 
+                        List<dynamic> jumlah = List<dynamic>();
+                        List<dynamic> isPartai = List<dynamic>();
+
                         for (var item in _daftarTransaksi) {
                           barcode.add(item['barcode']);
                           jumlah.add(item['jumlah']);
+
+                          if (item['isPartai']) {
+                            isPartai.add('1');
+                          } else {
+                            isPartai.add('0');
+                          }
                         }
 
-                        submitData(barcode, jumlah);
+                        submitData(barcode, jumlah, isPartai);
                       },
                     ),
                   ),
@@ -142,7 +167,56 @@ class _CheckoutTokoState extends State<CheckoutToko> {
     );
   }
 
-  Future<void> submitData(List barcode, List jumlah) async {
+  int formatHarga(String harga) {
+    String stringHarga =
+        harga.toString().replaceAll('Rp. ', '').split(',').join();
+
+    return int.parse(stringHarga);
+  }
+
+  int hitungKeranjang(List<dynamic> daftarBarang) {
+    int totalHarga = 0;
+
+    for (var barang in daftarBarang) {
+      if (barang['jumlah'] > 99 && barang['isPartai'] == true) {
+        totalHarga += barang['jumlah'] * barang['harga_partai'];
+      } else if (barang['jumlah'] > 11) {
+        totalHarga += barang['jumlah'] * barang['harga_grosir'];
+      } else {
+        totalHarga += barang['jumlah'] * barang['harga_jual'];
+      }
+    }
+
+    return totalHarga;
+  }
+
+  String hargaBarang(Map<String, dynamic> barang) {
+    if (barang['jumlah'] > 99 && barang['isPartai'] == true) {
+      return "Harga: ${_currencyFormater.format(barang['harga_partai'])}";
+    } else if (barang['jumlah'] > 11) {
+      return "Harga: ${_currencyFormater.format(barang['harga_grosir'])}";
+    } else {
+      return "Harga: ${_currencyFormater.format(barang['harga_jual'])}";
+    }
+  }
+
+  String subTotalBarang(Map<String, dynamic> barang) {
+    int subTotal = 0;
+
+    if (barang['jumlah'] > 99 && barang['isPartai'] == true) {
+      subTotal = barang['jumlah'] * barang['harga_partai'];
+    } else if (barang['jumlah'] > 11) {
+      subTotal = barang['jumlah'] * barang['harga_grosir'];
+    } else {
+      subTotal = barang['jumlah'] * barang['harga_jual'];
+    }
+
+    return _currencyFormater.format(subTotal);
+  }
+
+  bool showPartaiButton(Map<String, dynamic> barang) => barang['jumlah'] > 99;
+
+  Future<void> submitData(List barcode, List jumlah, List isPartai) async {
     setState(() => _isLoading = true);
     Response response;
 
@@ -161,6 +235,7 @@ class _CheckoutTokoState extends State<CheckoutToko> {
         body: jsonEncode({
           'barcode': barcode,
           'jumlah': jumlah,
+          'harga_partai': isPartai,
         }),
       ).timeout(Duration(seconds: 30));
 

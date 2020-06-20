@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thecave/env.dart';
 import 'package:thecave/pages/login.dart';
 import 'package:thecave/pages/toko/checkout-toko.dart';
+import 'package:thecave/widget/loading.dart';
 
 class KeranjangToko extends StatefulWidget {
   @override
@@ -44,128 +45,134 @@ class _KeranjangTokoState extends State<KeranjangToko> {
           ),
         ],
       ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Scrollbar(
-              child: ListView.builder(
-                itemCount: _listBarang.length,
-                itemBuilder: (context, index) {
-                  var item = _listBarang[index];
+      body: _isLoading
+          ? CircleLoading()
+          : Column(
+              children: <Widget>[
+                Expanded(
+                  child: Scrollbar(
+                    child: ListView.builder(
+                      itemCount: _listBarang.length,
+                      itemBuilder: (context, index) {
+                        var item = _listBarang[index];
 
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 30),
-                    child: Dismissible(
-                      key: Key(item['barcode']),
-                      background: BackgroundDismissible(
-                        padding: EdgeInsets.only(left: 30),
-                        alignment: AlignmentDirectional.centerStart,
-                        innerText: "Delete",
-                      ),
-                      secondaryBackground: BackgroundDismissible(
-                        padding: EdgeInsets.only(right: 30),
-                        alignment: AlignmentDirectional.centerEnd,
-                        innerText: "Delete",
-                      ),
-                      child: Container(
-                        padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: Colors.grey),
-                          ),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            item['nama'].toString(),
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Container(
-                            padding: EdgeInsets.only(top: 10, bottom: 10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 10),
-                                      child: Text("Stock: ${item['stock']}"),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(left: 10),
-                                      child: Text("Harga: "),
-                                    ),
-                                    Text(
-                                      item['harga_jual'].toString(),
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    )
-                                  ],
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 30),
+                          child: Dismissible(
+                            key: Key(item['barcode']),
+                            background: BackgroundDismissible(
+                              padding: EdgeInsets.only(left: 30),
+                              alignment: AlignmentDirectional.centerStart,
+                              innerText: "Delete",
+                            ),
+                            secondaryBackground: BackgroundDismissible(
+                              padding: EdgeInsets.only(right: 30),
+                              alignment: AlignmentDirectional.centerEnd,
+                              innerText: "Delete",
+                            ),
+                            child: Container(
+                              padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(color: Colors.grey),
                                 ),
-                                Padding(
-                                  padding: EdgeInsets.only(top: 20),
-                                  child: Container(
-                                    width: 120,
-                                    child: TextField(
-                                      autofocus: item['getFocus'],
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: <TextInputFormatter>[
-                                        WhitelistingTextInputFormatter
-                                            .digitsOnly
-                                      ],
-                                      // controller: null,
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        errorText: item['hasError']
-                                            ? 'Stock kurang'
-                                            : null,
-                                        labelText: "Jumlah beli",
+                              ),
+                              child: ListTile(
+                                title: Text(
+                                  item['nama'].toString(),
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Container(
+                                  padding: EdgeInsets.only(top: 10, bottom: 10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: EdgeInsets.only(right: 10),
+                                            child:
+                                                Text("Stock: ${item['stock']}"),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(left: 10),
+                                            child: Text("Harga: "),
+                                          ),
+                                          Text(
+                                            item['harga_jual'].toString(),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          )
+                                        ],
                                       ),
-                                      onChanged: (value) {
-                                        int valInput =
-                                            int.parse(value.toString());
-                                        int valStock =
-                                            int.parse(item['stock'].toString());
-                                        if (valInput > valStock) {
-                                          item['hasError'] = true;
-                                        } else {
-                                          item['hasError'] = false;
-                                          _listBarang[index]['jumlah'] =
-                                              valInput;
-                                        }
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 20),
+                                        child: Container(
+                                          width: 120,
+                                          child: TextField(
+                                            autofocus: item['getFocus'],
+                                            keyboardType: TextInputType.number,
+                                            inputFormatters: <
+                                                TextInputFormatter>[
+                                              WhitelistingTextInputFormatter
+                                                  .digitsOnly
+                                            ],
+                                            // controller: null,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              errorText: item['hasError']
+                                                  ? 'Stock kurang'
+                                                  : null,
+                                              labelText: "Jumlah beli",
+                                            ),
+                                            onChanged: (value) {
+                                              int valInput =
+                                                  int.parse(value.toString());
+                                              int valStock = int.parse(
+                                                  item['stock'].toString());
+                                              if (valInput > valStock) {
+                                                item['hasError'] = true;
+                                              } else {
+                                                item['hasError'] = false;
+                                                _listBarang[index]['jumlah'] =
+                                                    valInput;
+                                              }
 
-                                        setState(() {});
-                                      },
-                                    ),
+                                              setState(() {});
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
+                            onDismissed: (direction) {
+                              setState(() => _listBarang.removeAt(index));
+                              Flushbar(
+                                padding: EdgeInsets.fromLTRB(30, 25, 0, 25),
+                                message: "Barang berhasil dihapus.",
+                                duration: Duration(seconds: 3),
+                              )..show(context);
+                            },
                           ),
-                        ),
-                      ),
-                      onDismissed: (direction) {
-                        setState(() => _listBarang.removeAt(index));
-                        Flushbar(
-                          padding: EdgeInsets.fromLTRB(30, 25, 0, 25),
-                          message: "Barang berhasil dihapus.",
-                          duration: Duration(seconds: 3),
-                        )..show(context);
+                        );
                       },
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.all(20),
+                  child: CheckoutButton(
+                    listBarang: _listBarang,
+                  ),
+                )
+              ],
             ),
-          ),
-          Container(
-            padding: EdgeInsets.all(20),
-            child: CheckoutButton(
-              listBarang: _listBarang,
-            ),
-          )
-        ],
-      ),
       floatingActionButton: Visibility(
         visible: !_isLoading,
         child: Container(
@@ -249,6 +256,8 @@ class _KeranjangTokoState extends State<KeranjangToko> {
               'jumlah': 0,
               'stock': result['data']['jumlah'],
               'harga_jual': result['data']['hjual'],
+              'harga_grosir': result['data']['grosir'],
+              'harga_partai': result['data']['partai'],
               'hasError': false,
               'getFocus': false,
             });

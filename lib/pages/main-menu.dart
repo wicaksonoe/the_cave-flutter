@@ -34,7 +34,6 @@ class MainMenu extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text("Welcome, xxxx"),
                   ],
                 ),
               ),
