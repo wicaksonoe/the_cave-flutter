@@ -88,8 +88,50 @@ class MenuButtonWidget extends StatelessWidget {
     );
   }
 
-  pushToToko(context) {
-    Navigator.of(context).pushNamed('/dashboard-toko');
+  pushToToko(context) async {
+    final Env _env = Env();
+    final prop = await SharedPreferences.getInstance();
+    final token = prop.getString('token') ?? '';
+    Response response;
+
+    response = await get('${_env.baseURL}/check', headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token'
+    }).timeout(Duration(seconds: 30));
+
+    Map<String, dynamic> data = await jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      switch (response.statusCode) {
+        case 401:
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/login',
+            (route) => false,
+            arguments: ErrorMessage(
+                errorMessage: "Session expired.\nPlease re-login."),
+          );
+          break;
+
+        default:
+          logger.log(response.body);
+          break;
+      }
+
+      return;
+    }
+
+    if (data['data']['id_bazar'] == '') {
+      Navigator.of(context).pushNamed('/dashboard-toko');
+    } else {
+      // logger.log("Anda tidak bisa mengakses fitur toko.");
+      Flushbar(
+        padding: EdgeInsets.fromLTRB(30, 25, 0, 25),
+        message: "Anda tidak bisa mengakses fitur toko.\nSilahkan hubungi manajemen.",
+        duration: Duration(seconds: 3),
+      )..show(context);
+      return;
+    }
   }
 
   pushToBazar(context) async {
@@ -126,10 +168,10 @@ class MenuButtonWidget extends StatelessWidget {
     }
 
     if (data['data']['id_bazar'] == '') {
-      logger.log("Anda tidak terdaftar dalam bazar.");
+      // logger.log("Anda tidak terdaftar dalam bazar.");
       Flushbar(
         padding: EdgeInsets.fromLTRB(30, 25, 0, 25),
-        message: "Anda tidak terdaftar dalam bazar.",
+        message: "Anda tidak bisa mengakses fitur bazar karena tidak terdaftar dalam bazar.",
         duration: Duration(seconds: 3),
       )..show(context);
       return;
